@@ -4,18 +4,13 @@ from random import randint
 PLAYER_ROUND = 0
 
 class Player:
-    def __init__(self, game, playername):
-        self.game = game
+    def __init__(self, playername, point):
         self.playerName = playername
+        self.point = point
 
-        self.point = 100
-
-    #def updatePoint(self):
-    #    self.point+=10
 
 class Card:
-    def __init__(self, game, x, y):
-        self.game = game
+    def __init__(self, x, y):
         self.x = x
         self.y = y
         self.cardType = randint(0, 3)
@@ -34,47 +29,99 @@ class Card:
             image = self.imageList[3]
 
         return image
+    def disappear(self):
+        self.x = 1000
+        self.y = 1000
 
-    def get_CardType(self):
-        return self.cardType
-
-    def card_disappear(self):
-        self.x = self.game.width
-        self.y = self.game.height
-
-class Label:
-    def __init__(self, game, x, y, name):
-        self.game = game
-        self.x = x
-        self.y = y
-        self.name = name
-        self.pressed = False
-
-    def label_disappear(self):
-        self.x = self.game.width
-        self.y = self.game.height
-
-    def on_press(self):
-        self.pressed = True
-    def on_release(self):
-        self.pressed = False
-
-class Game:
-    def __init__(self, width, height):
+class Button:
+    def __init__(self,
+                 center_x, center_y,
+                 width, height,
+                 text,
+                 font_size=18,
+                 font_face="Arial",
+                 face_color=arcade.color.LIGHT_GRAY,
+                 highlight_color=arcade.color.WHITE,
+                 shadow_color=arcade.color.GRAY,
+                 button_height=2):
+        self.center_x = center_x
+        self.center_y = center_y
         self.width = width
         self.height = height
+        self.text = text
+        self.font_size = font_size
+        self.font_face = font_face
+        self.pressed = False
+        self.face_color = face_color
+        self.highlight_color = highlight_color
+        self.shadow_color = shadow_color
+        self.button_height = button_height
 
-        self.startButton = Label(self, 200, 250, 'Start')
-        self.player_one_label = Label(self, 10, 480, 'Player1')
-        self.player_two_label = Label(self, 10, 480, 'Player2')
-        self.next_label = Label(self, 360, 20, 'Next')
+    def draw(self):
+            """ Draw the button """
+            arcade.draw_rectangle_filled(self.center_x, self.center_y, self.width,
+                                         self.height, self.face_color)
 
-        self.card = Card(self, 200, 250)
+            if not self.pressed:
+                color = self.shadow_color
+            else:
+                color = self.highlight_color
 
-        self.player_one = Player(self, 1)
-        self.player_two = Player(self, 2)
+            # Bottom horizontal
+            arcade.draw_line(self.center_x - self.width / 2, self.center_y - self.height / 2,
+                             self.center_x + self.width / 2, self.center_y - self.height / 2,
+                             color, self.button_height)
 
-    def on_mouse_press(self, button, modifiers):
-        if(button == arcade.MOUSE_BUTTON_LEFT):
-            self.startButton.label_disappear()
-            self.startButton.pressed = True
+            # Right vertical
+            arcade.draw_line(self.center_x + self.width / 2, self.center_y - self.height / 2,
+                             self.center_x + self.width / 2, self.center_y + self.height / 2,
+                             color, self.button_height)
+
+            if not self.pressed:
+                color = self.highlight_color
+            else:
+                color = self.shadow_color
+
+            # Top horizontal
+            arcade.draw_line(self.center_x - self.width / 2, self.center_y + self.height / 2,
+                             self.center_x + self.width / 2, self.center_y + self.height / 2,
+                             color, self.button_height)
+
+            # Left vertical
+            arcade.draw_line(self.center_x - self.width / 2, self.center_y - self.height / 2,
+                             self.center_x - self.width / 2, self.center_y + self.height / 2,
+                             color, self.button_height)
+
+            x = self.center_x
+            y = self.center_y
+            if not self.pressed:
+                x -= self.button_height
+                y += self.button_height
+
+            arcade.draw_text(self.text, x, y,
+                             arcade.color.BLACK, font_size=self.font_size,
+                             width=self.width, align="center",
+                             anchor_x="center", anchor_y="center")
+
+    def on_press(self):
+            self.pressed = True
+
+    def on_release(self):
+            self.pressed = False
+
+    def disappear(self):
+            self.center_x = 1000
+            self.center_y = 1000
+
+class Label:
+    def __init__(self,text, center_x, center_y):
+        self.center_x = center_x
+        self.center_y = center_y
+        self.text = text
+
+    def draw(self):
+        arcade.draw_text(str(self.text), self.center_x, self.center_y, arcade.color.WHITE)
+
+    def disappear(self):
+        self.center_x = 1000
+        self.center_y = 1000
