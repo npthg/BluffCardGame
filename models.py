@@ -7,7 +7,11 @@ class Player:
     def __init__(self, playername, point):
         self.playerName = playername
         self.point = point
+    def increase_point(self, player_select_point):
+        self.point = self.point+player_select_point
 
+    def decrease_point(self, player_select_point):
+        self.point = self.point-player_select_point
 
 class Card:
     def __init__(self, x, y):
@@ -114,7 +118,7 @@ class Button:
             self.center_y = 1000
 
 class Label:
-    def __init__(self,text, center_x, center_y):
+    def __init__(self, text, center_x, center_y):
         self.center_x = center_x
         self.center_y = center_y
         self.text = text

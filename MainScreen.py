@@ -18,7 +18,7 @@ def check_mouse_press_for_buttons(x, y, button_list):
         button.on_press()
 
 
-def check_mouse_release_for_buttons(x, y, button_list):
+def check_mouse_release_for_buttons(x,y, button_list):
     """ If a mouse button has been released, see if we need to process
         any release events. """
     for button in button_list:
@@ -45,10 +45,13 @@ class MainScreenWindow(arcade.Window):
         self.button_list = []
         self.card_button_list = []
         self.point_button_list = []
+        self.truth_bluff_button_list = []
 
         self.start = False
         self.true_card = False
         self.next_player = False
+        self.click_truth_bluff = False
+
 
         self.select_card = 1
         self.select_card_name = ''
@@ -61,15 +64,18 @@ class MainScreenWindow(arcade.Window):
         self.player_two = Player('Player 2', 100)
 
         self.player_one_name_label = Label(self.player_one.playerName, 20, 480)
-        self.player_one_point_label = Label('Point : '+str(self.player_one.point), 300, 480)
+        #self.player_one_point_label = Label('Point : '+str(self.player_one.point), 300, 480)
 
         self.player_two_name_label = Label(self.player_two.playerName, 20, 480)
-        self.player_two_point_label = Label('Point : '+str(self.player_two.point), 300, 480)
+        #self.player_two_point_label = Label('Point : '+str(self.player_two.point), 300, 480)
 
         self.card_and_point_label = Label
+        self.player_one_result_label = Label
+        self.player_two_result_label = Label
+
+        self.result = ''
 
     def setup(self):
-
         self.cardSprite.center_x = self.card.x
         self.cardSprite.center_y = self.card.y
 
@@ -94,6 +100,11 @@ class MainScreenWindow(arcade.Window):
         self.point_button_list.append(seventyfive_point_button)
         self.point_button_list.append(hundred_point_button)
 
+        truth_button = InitialButton(100, self.height / 2 + 70, 'Truth', self.select_truth)
+        bluff_button = InitialButton(170, self.height / 2 + 70, 'Bluff', self.select_bluff)
+        self.truth_bluff_button_list.append(truth_button)
+        self.truth_bluff_button_list.append(bluff_button)
+
     def on_draw(self):
         arcade.start_render()
         self.button_list[0].draw()
@@ -110,10 +121,21 @@ class MainScreenWindow(arcade.Window):
                 self.player_two_name_label.draw()
                 self.player_two_point_label.draw()
                 self.card_and_point_label.draw()
+                for i in self.truth_bluff_button_list:
+                    i.draw()
+
+            if self.click_truth_bluff:
+                arcade.draw_text(self.result,  self.width / 2 -80, self.height / 2 + 100, arcade.color.WHITE, 20)
+                self.player_one_result_label.draw()
+                self.player_two_result_label.draw()
+
 
     def update(self, delta):
         if self.start:
             self.button_list[0].disappear()
+
+        self.player_one_point_label = Label('Point : ' + str(self.player_one.point), 300, 480)
+        self.player_two_point_label = Label('Point : ' + str(self.player_two.point), 300, 480)
 
         if self.card.cardType == self.select_card:
             self.true_card = True
@@ -137,19 +159,34 @@ class MainScreenWindow(arcade.Window):
             for i in self.point_button_list:
                 i.disappear()
 
-        self.card_and_point_label = Label(
-            self.player_one.playerName + ' choose ' + self.select_card_name + ' and bet ' +
-            str(self.player_select_point), self.width / 2 - 110, self.height / 2 + 100)
+            self.card_and_point_label = Label(
+                self.player_one.playerName + ' choose ' + self.select_card_name + ' and bet ' +
+                str(self.player_select_point), self.width / 2 - 110, self.height / 2 + 100)
+
+            if self.click_truth_bluff:
+                self.player_two_point_label.disappear()
+                self.player_two_name_label.disappear()
+                self.card_and_point_label.disappear()
+                for i in self.truth_bluff_button_list:
+                    i.disappear()
+
+            self.player_one_result_label = Label(self.player_one.playerName + ' points : ' + str(self.player_one.point),
+                                                 100, self.height / 2 + 70)
+            self.player_two_result_label = Label(self.player_two.playerName + ' points : ' + str(self.player_two.point),
+                                                 100, self.height / 2 + 50)
+
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         check_mouse_press_for_buttons(x, y, self.button_list)
         check_mouse_press_for_buttons(x, y, self.card_button_list)
         check_mouse_press_for_buttons(x, y, self.point_button_list)
+        check_mouse_press_for_buttons(x, y, self.truth_bluff_button_list)
 
     def on_mouse_release(self, x, y, button, key_modifiers):
         check_mouse_release_for_buttons(x, y, self.button_list)
         check_mouse_release_for_buttons(x, y, self.card_button_list)
         check_mouse_release_for_buttons(x, y, self.point_button_list)
+        check_mouse_release_for_buttons(x, y, self.truth_bluff_button_list)
 
     def start_game(self):
         self.start = True
@@ -181,6 +218,28 @@ class MainScreenWindow(arcade.Window):
     def select_hundred_point(self):
         self.player_select_point = 100
         self.next_player = True
+
+    def select_truth(self):
+        self.click_truth_bluff = True
+        if self.select_card == self.card.cardType:
+            self.player_two.increase_point(self.player_select_point)
+            self.player_one.decrease_point(self.player_select_point)
+            self.result = 'Yes, it is truth !!'
+        else:
+            self.player_two.decrease_point(self.player_select_point)
+            self.player_one.increase_point(self.player_select_point)
+            self.result = 'No, it is bluff !!'
+
+    def select_bluff(self):
+        self.click_truth_bluff = True
+        if self.select_card != self.card.cardType:
+            self.player_two.increase_point(self.player_select_point)
+            self.player_one.decrease_point(self.player_select_point)
+            self.result = 'Yes, it is bluff !!'
+        else:
+            self.player_two.decrease_point(self.player_select_point)
+            self.player_one.increase_point(self.player_select_point)
+            self.result = 'No, it is truth !!'
 
 if __name__== '__main__':
     window = MainScreenWindow(SCREEN_WIDTH, SCREEN_HEIGHT)
