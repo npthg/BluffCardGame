@@ -2,7 +2,8 @@ import arcade
 from models import Card, Player, Button, Label
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 500
-
+GAME_RUNNING = 0
+GAME_OVER = 1
 
 def check_mouse_press_for_buttons(x, y, button_list):
     """ Given an x, y, see if we need to register any button clicks. """
@@ -42,32 +43,33 @@ class MainScreenWindow(arcade.Window):
         super().__init__(width, height)
         arcade.set_background_color(arcade.color.BLACK)
 
+        self.player_one = Player('Player 1', 100)
+        self.player_two = Player('Player 2', 100)
+
+    def setup(self):
+        print('setup')
         self.button_list = []
         self.card_button_list = []
         self.point_button_list = []
         self.truth_bluff_button_list = []
+        self.continue_button_list = []
 
         self.start = False
         self.true_card = False
         self.next_player = False
         self.click_truth_bluff = False
+        self.click_continue = False
 
-
-        self.select_card = 1
+        self.select_card = 0
         self.select_card_name = ''
 
         self.player_select_point = 0
-        self.card = Card(self.width/2, self.height/2)
+        self.card = Card(self.width / 2, self.height / 2)
         self.cardSprite = arcade.Sprite(self.card.cardImage())
 
-        self.player_one = Player('Player 1', 100)
-        self.player_two = Player('Player 2', 100)
 
         self.player_one_name_label = Label(self.player_one.playerName, 20, 480)
-        #self.player_one_point_label = Label('Point : '+str(self.player_one.point), 300, 480)
-
         self.player_two_name_label = Label(self.player_two.playerName, 20, 480)
-        #self.player_two_point_label = Label('Point : '+str(self.player_two.point), 300, 480)
 
         self.card_and_point_label = Label
         self.player_one_result_label = Label
@@ -75,15 +77,14 @@ class MainScreenWindow(arcade.Window):
 
         self.result = ''
 
-    def setup(self):
         self.cardSprite.center_x = self.card.x
         self.cardSprite.center_y = self.card.y
 
         start_button = InitialButton(self.width/2, self.height/2, 'Start', self.start_game)
         self.button_list.append(start_button)
 
-        cat_button = InitialButton(100, 80, 'Cat', self.select_cat_card)
-        dog_button = InitialButton(170, 80, 'Dog', self.select_dog_card)
+        cat_button = InitialButton(100, 80, 'Dog', self.select_dog_card)
+        dog_button = InitialButton(170, 80, 'Cat', self.select_cat_card)
         pig_button = InitialButton(240, 80, 'Pig', self.select_pig_card)
         rat_button = InitialButton(310, 80, 'Rat', self.select_rat_card)
         self.card_button_list.append(cat_button)
@@ -105,8 +106,12 @@ class MainScreenWindow(arcade.Window):
         self.truth_bluff_button_list.append(truth_button)
         self.truth_bluff_button_list.append(bluff_button)
 
-    def on_draw(self):
-        arcade.start_render()
+        continue_button = InitialButton(self.width-100, 20, 'Continue', self.select_continue)
+        self.continue_button_list.append(continue_button)
+
+        self.current_state = GAME_RUNNING
+
+    def draw_game(self):
         self.button_list[0].draw()
         if self.start:
             self.cardSprite.draw()
@@ -124,77 +129,90 @@ class MainScreenWindow(arcade.Window):
                 for i in self.truth_bluff_button_list:
                     i.draw()
 
-            if self.click_truth_bluff:
-                arcade.draw_text(self.result,  self.width / 2 -80, self.height / 2 + 100, arcade.color.WHITE, 20)
-                self.player_one_result_label.draw()
-                self.player_two_result_label.draw()
+
+
+    def draw_gameover(self):
+        arcade.draw_text(self.result, self.width / 2 - 80, self.height / 2 + 100, arcade.color.WHITE, 20)
+        self.player_one_result_label.draw()
+        self.player_two_result_label.draw()
+        for i in self.continue_button_list:
+            i.draw()
+
+    def on_draw(self):
+        arcade.start_render()
+        if(self.current_state == GAME_RUNNING):
+            self.draw_game()
+        elif(self.current_state == GAME_OVER):
+            self.draw_gameover()
 
 
     def update(self, delta):
-        if self.start:
-            self.button_list[0].disappear()
+        if self.current_state == GAME_RUNNING:
+            if self.start:
+                self.button_list[0].disappear()
 
-        self.player_one_point_label = Label('Point : ' + str(self.player_one.point), 300, 480)
-        self.player_two_point_label = Label('Point : ' + str(self.player_two.point), 300, 480)
+            self.player_one_point_label = Label('Point : ' + str(self.player_one.point), 300, 480)
+            self.player_two_point_label = Label('Point : ' + str(self.player_two.point), 300, 480)
 
-        if self.card.cardType == self.select_card:
-            self.true_card = True
+            if self.card.cardType == self.select_card:
+                self.true_card = True
 
-        if self.select_card == 0:
-            self.select_card_name = 'Cat Card'
-        elif self.select_card == 1:
-            self.select_card_name = 'Dog Card'
-        elif self.select_card == 2:
-            self.select_card_name = 'Pig Card'
-        elif self.select_card == 3:
-            self.select_card_name = 'Rat Card'
+            if self.select_card == 0:
+                self.select_card_name = 'Dog Card'
+            elif self.select_card == 1:
+                self.select_card_name = 'Cat Card'
+            elif self.select_card == 2:
+                self.select_card_name = 'Pig Card'
+            elif self.select_card == 3:
+                self.select_card_name = 'Rat Card'
 
-        if self.next_player:
-            self.cardSprite.center_x = 1000
-            self.cardSprite.center_y = 1000
-            self.player_one_point_label.disappear()
-            self.player_one_name_label.disappear()
-            for i in self.card_button_list:
-                i.disappear()
-            for i in self.point_button_list:
-                i.disappear()
-
-            self.card_and_point_label = Label(
-                self.player_one.playerName + ' choose ' + self.select_card_name + ' and bet ' +
-                str(self.player_select_point), self.width / 2 - 110, self.height / 2 + 100)
-
-            if self.click_truth_bluff:
-                self.player_two_point_label.disappear()
-                self.player_two_name_label.disappear()
-                self.card_and_point_label.disappear()
-                for i in self.truth_bluff_button_list:
+            if self.next_player:
+                self.cardSprite.center_x = 1000
+                self.cardSprite.center_y = 1000
+                self.player_one_point_label.disappear()
+                self.player_one_name_label.disappear()
+                for i in self.card_button_list:
+                    i.disappear()
+                for i in self.point_button_list:
                     i.disappear()
 
-            self.player_one_result_label = Label(self.player_one.playerName + ' points : ' + str(self.player_one.point),
-                                                 100, self.height / 2 + 70)
-            self.player_two_result_label = Label(self.player_two.playerName + ' points : ' + str(self.player_two.point),
-                                                 100, self.height / 2 + 50)
+                self.card_and_point_label = Label(
+                    self.player_one.playerName + ' choose ' + self.select_card_name + ' and bet ' +
+                    str(self.player_select_point), self.width / 2 - 110, self.height / 2 + 100)
 
+                if self.click_truth_bluff:
+                    self.current_state = GAME_OVER
+                    self.player_two_point_label.disappear()
+                    self.player_two_name_label.disappear()
+                    self.card_and_point_label.disappear()
+                    for i in self.truth_bluff_button_list:
+                        i.disappear()
+
+                self.player_one_result_label = Label(self.player_one.playerName + ' points : ' + str(self.player_one.point),
+                                                 100, self.height / 2 + 70)
+                self.player_two_result_label = Label(self.player_two.playerName + ' points : ' + str(self.player_two.point),
+                                                 100, self.height / 2 + 50)
 
     def on_mouse_press(self, x, y, button, key_modifiers):
         check_mouse_press_for_buttons(x, y, self.button_list)
         check_mouse_press_for_buttons(x, y, self.card_button_list)
         check_mouse_press_for_buttons(x, y, self.point_button_list)
         check_mouse_press_for_buttons(x, y, self.truth_bluff_button_list)
-
+        check_mouse_press_for_buttons(x, y, self.continue_button_list)
     def on_mouse_release(self, x, y, button, key_modifiers):
         check_mouse_release_for_buttons(x, y, self.button_list)
         check_mouse_release_for_buttons(x, y, self.card_button_list)
         check_mouse_release_for_buttons(x, y, self.point_button_list)
         check_mouse_release_for_buttons(x, y, self.truth_bluff_button_list)
+        check_mouse_release_for_buttons(x, y, self.continue_button_list)
 
     def start_game(self):
         self.start = True
 
-    def select_cat_card(self):
+    def select_dog_card(self):
         self.select_card = 0
 
-    def select_dog_card(self):
+    def select_cat_card(self):
         self.select_card = 1
 
     def select_pig_card(self):
@@ -240,6 +258,10 @@ class MainScreenWindow(arcade.Window):
             self.player_two.decrease_point(self.player_select_point)
             self.player_one.increase_point(self.player_select_point)
             self.result = 'No, it is truth !!'
+
+    def select_continue(self):
+        self.setup()
+
 
 if __name__== '__main__':
     window = MainScreenWindow(SCREEN_WIDTH, SCREEN_HEIGHT)
