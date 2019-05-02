@@ -1,13 +1,15 @@
 import arcade
+import time
 from models import Card, Player, Button, Label
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 500
 GAME_RUNNING = 0
 GAME_OVER = 1
+GAME_END = 2
 
 def check_mouse_press_for_buttons(x, y, button_list):
     """ Given an x, y, see if we need to register any button clicks. """
-    for button in button_list:
+    for button in button_list:  
         if x > button.center_x + button.width / 2:
             continue
         if x < button.center_x - button.width / 2:
@@ -47,7 +49,6 @@ class MainScreenWindow(arcade.Window):
         self.player_two = Player('Player 2', 100)
 
     def setup(self):
-        print('setup')
         self.button_list = []
         self.card_button_list = []
         self.point_button_list = []
@@ -55,11 +56,11 @@ class MainScreenWindow(arcade.Window):
         self.continue_button_list = []
 
         self.start = False
+        self.ready = False
         self.true_card = False
         self.next_player = False
         self.click_truth_bluff = False
         self.click_continue = False
-
         self.select_card = 0
         self.select_card_name = ''
 
@@ -67,7 +68,7 @@ class MainScreenWindow(arcade.Window):
         self.card = Card(self.width / 2, self.height / 2)
         self.cardSprite = arcade.Sprite(self.card.cardImage())
 
-
+        self.ready_label = Label('Player 2 close your eyes. ', self.width / 2 - 80, self.height / 2 + 100)
         self.player_one_name_label = Label(self.player_one.playerName, 20, 480)
         self.player_two_name_label = Label(self.player_two.playerName, 20, 480)
 
@@ -81,7 +82,9 @@ class MainScreenWindow(arcade.Window):
         self.cardSprite.center_y = self.card.y
 
         start_button = InitialButton(self.width/2, self.height/2, 'Start', self.start_game)
+        ready_button = InitialButton(250, self.height / 2 + 70, 'Go', self.ready_game)
         self.button_list.append(start_button)
+        self.button_list.append(ready_button)
 
         cat_button = InitialButton(100, 80, 'Dog', self.select_dog_card)
         dog_button = InitialButton(170, 80, 'Cat', self.select_cat_card)
@@ -110,17 +113,29 @@ class MainScreenWindow(arcade.Window):
         self.continue_button_list.append(continue_button)
 
         self.current_state = GAME_RUNNING
-
     def draw_game(self):
         self.button_list[0].draw()
         if self.start:
-            self.cardSprite.draw()
-            self.player_one_name_label.draw()
-            self.player_one_point_label.draw()
-            for i in self.card_button_list:
-                i.draw()
-            for i in self.point_button_list:
-                i.draw()
+            self.ready_label.draw()
+            self.button_list[1].draw()
+            if(self.ready == True):
+                self.cardSprite.draw()
+                self.player_one_name_label.draw()
+                self.player_one_point_label.draw()
+                for i in self.card_button_list:
+                    i.draw()
+                if(self.player_one.point > 75 and self.player_two.point > 75 ):
+                    for i in self.point_button_list:
+                        i.draw()
+                elif(self.player_one.point == 75 or self.player_two.point == 75 ):
+                    self.point_button_list[0].draw()
+                    self.point_button_list[1].draw()
+                    self.point_button_list[2].draw()
+                elif(self.player_one.point == 50 or self.player_two.point == 50):
+                    self.point_button_list[0].draw()
+                    self.point_button_list[1].draw()
+                elif(self.player_one.point == 25 or self.player_two.point == 25):
+                    self.point_button_list[0].draw()
 
             if self.next_player:
                 self.player_two_name_label.draw()
@@ -138,18 +153,28 @@ class MainScreenWindow(arcade.Window):
         for i in self.continue_button_list:
             i.draw()
 
+    def draw_gameend(self):
+        if(self.player_one.point == 0):
+            arcade.draw_text('Player 2 Win', self.width / 2 - 70, self.height / 2 + 100, arcade.color.WHITE, 20)
+        elif(self.player_two.point == 0):
+            arcade.draw_text('Player 1 Win', self.width / 2 - 70, self.height / 2 + 100, arcade.color.WHITE, 20)
+
     def on_draw(self):
         arcade.start_render()
         if(self.current_state == GAME_RUNNING):
             self.draw_game()
         elif(self.current_state == GAME_OVER):
             self.draw_gameover()
-
+        elif(self.current_state == GAME_END):
+            self.draw_gameend()
 
     def update(self, delta):
         if self.current_state == GAME_RUNNING:
             if self.start:
                 self.button_list[0].disappear()
+            if self.ready:
+                self.button_list[1].disappear()
+                self.ready_label.disappear()
 
             self.player_one_point_label = Label('Point : ' + str(self.player_one.point), 300, 480)
             self.player_two_point_label = Label('Point : ' + str(self.player_two.point), 300, 480)
@@ -206,6 +231,9 @@ class MainScreenWindow(arcade.Window):
         check_mouse_release_for_buttons(x, y, self.truth_bluff_button_list)
         check_mouse_release_for_buttons(x, y, self.continue_button_list)
 
+    def ready_game(self):
+        self.ready = True
+
     def start_game(self):
         self.start = True
 
@@ -260,7 +288,11 @@ class MainScreenWindow(arcade.Window):
             self.result = 'No, it is truth !!'
 
     def select_continue(self):
-        self.setup()
+        if(self.player_one.point == 0 or self.player_two.point == 0):
+            self.current_state = GAME_END
+        else:
+            self.setup()
+
 
 
 if __name__== '__main__':

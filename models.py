@@ -1,4 +1,5 @@
 import arcade
+import time
 from random import randint
 
 PLAYER_ROUND = 0
@@ -70,6 +71,7 @@ class Button:
                 color = self.shadow_color
             else:
                 color = self.highlight_color
+                self.face_color = arcade.color.YELLOW
 
             # Bottom horizontal
             arcade.draw_line(self.center_x - self.width / 2, self.center_y - self.height / 2,
@@ -85,6 +87,7 @@ class Button:
                 color = self.highlight_color
             else:
                 color = self.shadow_color
+                self.face_color = arcade.color.YELLOW
 
             # Top horizontal
             arcade.draw_line(self.center_x - self.width / 2, self.center_y + self.height / 2,
@@ -129,3 +132,5 @@ class Label:
     def disappear(self):
         self.center_x = 1000
         self.center_y = 1000
+
+
